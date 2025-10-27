@@ -1,0 +1,25 @@
+version: "3.9"
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: outage
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports: [ "5432:5432" ]
+    volumes: [ "pgdata:/var/lib/postgresql/data" ]
+  cache:
+    image: redis:7
+    ports: [ "6379:6379" ]
+  app:
+    build: .
+    env_file: .env
+    depends_on: [ db, cache ]
+    command: >
+      bash -lc "node --version &&
+                npm run migrate &&
+                node dist/src/bot.js & 
+                while true; do node dist/src/parser.js; node dist/src/scheduler.js; sleep 60; done"
+    ports: []
+volumes:
+  pgdata:
